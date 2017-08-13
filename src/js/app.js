@@ -3,6 +3,7 @@ const fs = require('fs');
 const fse = require('fs-extra');
 const extfs = require('extfs');
 import File from "./File";
+const writeJsonFile = require('write-json-file');
 
 // React packages.
 import React, { Component } from 'react';
@@ -20,7 +21,8 @@ class App extends Component {
             fileList: [],
             directory: '/',
             exportDirectory: 'sorted',
-            tussenVoegsel: '-'
+            tussenVoegsel: '-',
+            saveName: ''
         };
 
         this.getFilesFromDirectory(this.state.directory);
@@ -88,7 +90,7 @@ class App extends Component {
         files.map((file, index) => {
             let number = index;
             if(number < 10) {
-                number = "0" + number;
+                number = "0" + (number + 1);
             } else {
                 number = "" + number;
             }
@@ -106,10 +108,48 @@ class App extends Component {
         });
     }
 
+    onSave() {
+        let json = JSON.stringify(this.state.fileList);
+
+        fs.writeFileSync(this.state.saveName + '.json', json);
+    }
+
+    onLoad() {
+        let json = JSON.parse(fs.readFileSync(this.state.saveName + '.json'));
+
+        json.map((nf, nindex) => {
+            this.state.fileList.map((of, index) => {
+                if(nf.oldName === of.oldName) {
+                    let fileFound = of;
+                    fileFound.newName = nf.newName;
+                    let oldIndex = this.state.fileList.indexOf(of);
+
+                    this.setState({ of: fileFound });
+                    this.setState({
+                        fileList: arrayMove(this.state.fileList, oldIndex, nindex)
+                    });
+                }
+            });
+
+            this.state.fileList.map((pf, index) => {
+                if(nf.oldName === pf.oldName) {
+                    let fileFound = pf;
+
+                    let oldIndex = this.state.fileList.indexOf(fileFound);
+                    console.log(fileFound.oldName + " " + oldIndex + " : " + nindex);
+
+                    this.setState({
+                        fileList: arrayMove(this.state.fileList, oldIndex, nindex)
+                    });
+                }
+            });
+        });
+    }
+
     render() {
         return(
             <div>
-                <PMenu tussenVoegsel={ this.state.tussenVoegsel } onTussenVoegselChange={ (voegsel) => this.setState({ tussenVoegsel: voegsel }) } onExportDirectoryChange={ (directory) => this.setState({ exportDirectory: directory }) } exportDirectory={ this.state.exportDirectory } onExport={ () => this.onExport() } onDirectoryChange={ (directory) => this.onDirectoryChange(directory) } directoryName={ this.state.directory } onRefreshFiles={ () => this.getFilesFromDirectory(this.state.directory) } />
+                <PMenu saveName={ this.state.saveName } onLoadNames={ () => this.onLoad() } onSaveNameChange={ (name) => this.setState({ saveName: name }) } onSaveNames={ () => this.onSave() } tussenVoegsel={ this.state.tussenVoegsel } onTussenVoegselChange={ (voegsel) => this.setState({ tussenVoegsel: voegsel }) } onExportDirectoryChange={ (directory) => this.setState({ exportDirectory: directory }) } exportDirectory={ this.state.exportDirectory } onExport={ () => this.onExport() } onDirectoryChange={ (directory) => this.onDirectoryChange(directory) } directoryName={ this.state.directory } onRefreshFiles={ () => this.getFilesFromDirectory(this.state.directory) } />
                 <div className="container">
                     <SortableList onNewNameChange={ (id, name) => this.handleNewName(id, name) } files={ this.state.fileList } onSortEnd={ (oldIndex, newIndex) => this.onSortEnd(oldIndex, newIndex) } />
                 </div>

@@ -1,5 +1,7 @@
+$background-gradient: linear-gradient(to bottom, #b00200, #580400);
+
 body {
-    background: linear-gradient(to bottom, #b00200, #580400);
+    background: $background-gradient;
 }
 
 .navbar {
